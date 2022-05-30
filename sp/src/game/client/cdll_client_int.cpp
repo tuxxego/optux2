@@ -52,6 +52,8 @@
 #include "gamestringpool.h"
 #include "c_user_message_register.h"
 #include "IGameUIFuncs.h"
+#include "../rendersystem/irendersystemrenderables.h"
+#include "../rendersystem/rendersystem.h"
 #include "saverestoretypes.h"
 #include "saverestore.h"
 #include "physics_saverestore.h"
@@ -83,6 +85,8 @@
 #include "appframework/IAppSystemGroup.h"
 #include "scenefilecache/ISceneFileCache.h"
 #include "tier2/tier2dm.h"
+#include "..\GameUI2\iGameUI2.h"
+#include "..\rendersystem\irendersystem.h"
 #include "tier3/tier3.h"
 #include "ihudlcd.h"
 #include "toolframework_client.h"
@@ -151,6 +155,10 @@
 #include "vscript_client.h"
 #endif
 
+
+
+
+
 extern vgui::IInputInternal *g_InputInternal;
 
 //=============================================================================
@@ -206,6 +214,7 @@ IInputSystem *inputsystem = NULL;
 ISceneFileCache *scenefilecache = NULL;
 IXboxSystem *xboxsystem = NULL;	// Xbox 360 only
 IMatchmaking *matchmaking = NULL;
+IRenderSystem *rendersystem = NULL;
 IUploadGameStats *gamestatsuploader = NULL;
 IClientReplayContext *g_pClientReplayContext = NULL;
 #if defined( REPLAY_ENABLED )
@@ -223,6 +232,10 @@ IVEngineServer	*serverengine = NULL;
 #endif
 
 IScriptManager *scriptmanager = NULL;
+
+//GameUI2
+IGameUI2* GameUI2 = nullptr;
+
 
 IHaptics* haptics = NULL;// NVNT haptics system interface singleton
 
@@ -360,6 +373,22 @@ bool g_bTextMode = false;
 class IClientPurchaseInterfaceV2 *g_pClientPurchaseInterface = (class IClientPurchaseInterfaceV2 *)(&g_bTextMode + 156);
 
 static ConVar *g_pcv_ThreadMode = NULL;
+
+#ifdef CLIENT_DLL
+//#pragma message(FILE_LINE_STRING " !!FIXME!! replace all this with Sys_LoadGameModule")
+static class DllOverride
+{
+public:
+	DllOverride()
+	{
+		Sys_LoadInterface("filesystem_stdio.dll", FILESYSTEM_INTERFACE_VERSION, nullptr, (void **)&g_pFullFileSystem);
+		const char *pGameDir = CommandLine()->ParmValue("-game", "hl2");
+		pGameDir = VarArgs("%s/bin", pGameDir);
+		g_pFullFileSystem->AddSearchPath(pGameDir, "EXECUTABLE_PATH", PATH_ADD_TO_HEAD);
+	}
+} g_DllOverride;
+#endif
+
 
 //-----------------------------------------------------------------------------
 // Purpose: interface for gameui to modify voice bans
@@ -1198,11 +1227,92 @@ void CHLClient::PostInit()
 
 			g_pFullFileSystem->AddSearchPath( szPath, "HL1" );
 			g_pFullFileSystem->AddSearchPath( szPath, "GAME" );
+
 		}
 	}
 #endif
+
+	//GameUI2
+	if (CommandLine()->FindParm("-noGameUI2") == 0)
+	{
+		char GameUI2Path[2048];
+		Q_snprintf(GameUI2Path, sizeof(GameUI2Path), "%s\\bin\\TuxUI.dll", engine->GetGameDirectory());
+
+		CSysModule* GameUI2Module = Sys_LoadModule(GameUI2Path);
+		if (GameUI2Module != nullptr)
+		{
+			ConColorMsg(Color(0, 148, 255, 255), "Loaded TuxUI.dll\n");
+
+			CreateInterfaceFn GameUI2Factory = Sys_GetFactory(GameUI2Module);
+			if (GameUI2Factory)
+			{
+				GameUI2 = (IGameUI2*)GameUI2Factory(GAMEUI2_DLL_INTERFACE_VERSION, NULL);
+				if (GameUI2 != nullptr)
+				{
+					ConColorMsg(Color(0, 148, 255, 255), "Initializing ITuxUI interface...\n");
+
+					factorylist_t Factories;
+					FactoryList_Retrieve(Factories);
+					GameUI2->Initialize(Factories.appSystemFactory);
+					GameUI2->OnInitialize();
+				}
+				else
+				{
+					ConColorMsg(Color(0, 148, 255, 255), "TuxUI FAILED TO LOAD.\n");
+				}
+			}
+			else
+			{
+				ConColorMsg(Color(0, 148, 255, 255), "TuxUI can't load.\n");
+			}
+		}
+		else
+		{
+			ConColorMsg(Color(0, 148, 255, 255), "Unable to load TuxUI.dll from:\n%s\n", GameUI2Path);
+		}
+	}
+
+
+
+//Render System
+if (CommandLine()->FindParm("-noRenderSystem") == 0)
+{
+	char Rendersystempath[2048];
+	Q_snprintf(Rendersystempath, sizeof(Rendersystempath), "%s\\bin\\rendersystem.dll", engine->GetGameDirectory());
+
+	CSysModule* RendersystemModule = Sys_LoadModule(Rendersystempath);
+	if (RendersystemModule != nullptr)
+	{
+		ConColorMsg(Color(0, 148, 255, 255), "Loaded Rendersystem\n");
+
+		CreateInterfaceFn RendersystemFactory = Sys_GetFactory(RendersystemModule);
+		if (RendersystemFactory)
+		{
+			rendersystem = (IRenderSystem*)RendersystemFactory(RENDERSYSTEM_INTERFACE_VERSION, NULL);
+			if (rendersystem != nullptr)
+			{
+				ConColorMsg(Color(0, 148, 255, 255), "Initializing IRendersystem interface...\n");
+
+				factorylist_t Factories;
+				FactoryList_Retrieve(Factories);
+			}
+			else
+			{
+				ConColorMsg(Color(0, 148, 255, 255), "Rendersystem FAILED TO LOAD.\n");
+			}
+		}
+		else
+		{
+			ConColorMsg(Color(0, 148, 255, 255), "rendersystem can't load.\n");
+		}
+	}
+	else
+	{
+		ConColorMsg(Color(0, 148, 255, 255), "Unable to load rendersystem.dll from:\n%s\n", Rendersystempath);
+	}
 }
 
+}
 //-----------------------------------------------------------------------------
 // Purpose: Called when the client .dll is being dismissed
 //-----------------------------------------------------------------------------
@@ -1246,6 +1356,20 @@ void CHLClient::Shutdown( void )
 	UncacheAllMaterials();
 
 	IGameSystem::ShutdownAllSystems();
+	//GameUI2
+	if (GameUI2 != nullptr)
+	{
+		GameUI2->OnShutdown();
+		GameUI2->Shutdown();
+	}
+	// Shuts down the rendersystem
+	if (rendersystem != nullptr)
+	{
+		rendersystem->Shutdown();
+
+	}
+
+
 	
 	gHUD.Shutdown();
 	VGui_Shutdown();
@@ -1346,6 +1470,10 @@ void CHLClient::HudUpdate( bool bActive )
 		g_pSixenseInput->SixenseFrame( 0, NULL ); 
 	}
 #endif
+	//GameUI2
+	if (GameUI2 != nullptr)
+		GameUI2->OnUpdate();
+
 }
 
 //-----------------------------------------------------------------------------
@@ -1703,6 +1831,10 @@ void CHLClient::LevelInitPreEntity( char const* pMapName )
 		CReplayRagdollRecorder::Instance().Init();
 	}
 #endif
+	//GameUI2
+	if (GameUI2 != nullptr)
+		GameUI2->OnLevelInitializePreEntity();
+
 }
 
 
@@ -1714,6 +1846,10 @@ void CHLClient::LevelInitPostEntity( )
 	IGameSystem::LevelInitPostEntityAllSystems();
 	C_PhysPropClientside::RecreateAll();
 	internalCenterPrint->Clear();
+	//GameUI2
+	if (GameUI2 != nullptr)
+		GameUI2->OnLevelInitializePostEntity();
+
 }
 
 //-----------------------------------------------------------------------------
@@ -1779,6 +1915,10 @@ void CHLClient::LevelShutdown( void )
 	ParticleMgr()->RemoveAllEffects();
 	
 	StopAllRumbleEffects();
+	//GameUI2
+	if (GameUI2 != nullptr)
+		GameUI2->OnLevelShutdown();
+
 
 	gHUD.LevelShutdown();
 

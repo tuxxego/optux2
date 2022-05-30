@@ -22,6 +22,7 @@ class IVEngineClient;
 class IVModelRender;
 class IVEfx;
 class IVRenderView;
+class IRenderSystem;
 class IVDebugOverlay;
 class IMaterialSystem;
 class IMaterialSystemStub;
@@ -59,6 +60,9 @@ class IEngineReplay;
 class IEngineClientReplay;
 class IReplayScreenshotManager;
 class CSteamID;
+//GameUI2
+class IGameUI2;
+
 
 //=============================================================================
 // HPE_BEGIN
@@ -110,6 +114,10 @@ extern IReplayManager *g_pReplayManager;
 extern IReplayScreenshotManager *g_pReplayScreenshotManager;
 extern IEngineReplay *g_pEngineReplay;
 extern IEngineClientReplay *g_pEngineClientReplay;
+
+//GameUI2
+extern IGameUI2* GameUI2;
+
 #ifdef MAPBASE
 extern IVEngineServer *serverengine;
 #endif

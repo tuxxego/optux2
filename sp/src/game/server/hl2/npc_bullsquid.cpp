@@ -171,7 +171,7 @@ void CNPC_Bullsquid::Precache()
 //-----------------------------------------------------------------------------
 Class_T	CNPC_Bullsquid::Classify( void )
 {
-	return CLASS_BULLSQUID; 
+	return CLASS_COMBINE; 
 }
 
 //=========================================================

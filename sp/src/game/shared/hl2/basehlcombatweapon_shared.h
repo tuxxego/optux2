@@ -28,30 +28,30 @@ private:
 #endif
 #endif
 
-	DECLARE_CLASS( CBaseHLCombatWeapon, CBaseCombatWeapon );
+	DECLARE_CLASS(CBaseHLCombatWeapon, CBaseCombatWeapon);
 public:
 	DECLARE_NETWORKCLASS();
 	DECLARE_PREDICTABLE();
 
-	virtual bool	WeaponShouldBeLowered( void );
+	virtual bool	WeaponShouldBeLowered(void);
 
-			bool	CanLower();
-	virtual bool	Ready( void );
-	virtual bool	Lower( void );
-	virtual bool	Deploy( void );
-	virtual bool	Holster( CBaseCombatWeapon *pSwitchingTo );
-	virtual void	WeaponIdle( void );
+	bool	CanLower();
+	virtual bool	Ready(void);
+	virtual bool	Lower(void);
+	virtual bool	Deploy(void);
+	virtual bool	Holster(CBaseCombatWeapon *pSwitchingTo);
+	virtual void	WeaponIdle(void);
 
-	virtual void	AddViewmodelBob( CBaseViewModel *viewmodel, Vector &origin, QAngle &angles );
-	virtual	float	CalcViewmodelBob( void );
+	virtual void	AddViewmodelBob(CBaseViewModel *viewmodel, Vector &origin, QAngle &angles);
+	virtual	float	CalcViewmodelBob(void);
 
-	virtual Vector	GetBulletSpread( WeaponProficiency_t proficiency );
-	virtual float	GetSpreadBias( WeaponProficiency_t proficiency );
+	virtual Vector	GetBulletSpread(WeaponProficiency_t proficiency);
+	virtual float	GetSpreadBias(WeaponProficiency_t proficiency);
 
 	virtual const	WeaponProficiencyInfo_t *GetProficiencyValues();
 	static const	WeaponProficiencyInfo_t *GetDefaultProficiencyValues();
 
-	virtual void	ItemHolsterFrame( void );
+	virtual void	ItemHolsterFrame(void);
 
 	int				m_iPrimaryAttacks;		// # of primary attacks performed with this weapon
 	int				m_iSecondaryAttacks;	// # of secondary attacks performed with this weapon

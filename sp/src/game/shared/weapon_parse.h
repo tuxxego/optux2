@@ -93,6 +93,9 @@ public:
 	int						iPosition;								// position in the inventory slot.
 	int						iMaxClip1;								// max primary clip size (-1 if no clip)
 	int						iMaxClip2;								// max secondary clip size (-1 if no clip)
+	char					szCameraAttachment[MAX_WEAPON_STRING];
+	bool					bHaveCamera;
+	float					flCameraMovementScale;
 	int						iDefaultClip1;							// amount of primary ammo in the gun when it's created
 	int						iDefaultClip2;							// amount of secondary ammo in the gun when it's created
 	int						iWeight;								// this value used to determine this weapon's importance in autoselection.
@@ -102,6 +105,12 @@ public:
 	int						iFlags;									// miscellaneous weapon flags
 	char					szAmmo1[MAX_WEAPON_AMMO_NAME];			// "primary" ammo type
 	char					szAmmo2[MAX_WEAPON_AMMO_NAME];			// "secondary" ammo type
+	float 					m_flViewModelFOV; 						// Dynamic Viewmodel FOV
+	Vector					vecIronsightPosOffset;
+	QAngle					angIronsightAngOffset;
+	float					flIronsightFOVOffset;
+
+
 
 	// Sound blocks
 	char					aShootSounds[NUM_SHOOT_SOUND_TYPES][MAX_WEAPON_STRING];	

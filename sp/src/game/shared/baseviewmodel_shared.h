@@ -17,6 +17,11 @@
 #include "shared_classnames.h"
 #include "econ/ihasowner.h"
 
+#if !defined(CLIENT_DLL)
+#include "player.h"
+
+#endif
+
 class CBaseCombatWeapon;
 class CBaseCombatCharacter;
 class CVGuiScreen;
@@ -53,9 +58,11 @@ public:
 	virtual void			SetWeaponModel( const char *pszModelname, CBaseCombatWeapon *weapon );
 
 	virtual void			CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& original_angles );
-	virtual void			CalcViewModelView( CBasePlayer *owner, const Vector& eyePosition, 
-								const QAngle& eyeAngles );
-	virtual void			AddViewModelBob( CBasePlayer *owner, Vector& eyePosition, QAngle& eyeAngles ) {};
+	virtual void			AddViewModelBob( CBaseViewModel *owner, Vector& eyePosition, QAngle& eyeAngles ) {};
+	virtual void			CalcViewModelView( CBasePlayer *owner, const Vector& eyePosition,
+		const QAngle& eyeAngles );
+
+
 
 	// Initializes the viewmodel for use							
 	void					SetOwner( CBaseEntity *pEntity );
@@ -76,6 +83,7 @@ public:
 	void					DestroyControlPanels();
 	void					SetControlPanelsActive( bool bState );
 	void					ShowControlPanells( bool show );
+
 
 	virtual CBaseCombatWeapon *GetOwningWeapon( void );
 	
@@ -197,6 +205,21 @@ private:
 	// Weapon art
 	string_t				m_sVMName;			// View model of this weapon
 	string_t				m_sAnimationPrefix;		// Prefix of the animations that should be used by the player carrying this weapon
+	QAngle					m_angEyeAngles;
+	QAngle					m_angViewPunch;
+	QAngle					m_angOldFacing;
+	QAngle					m_angDelta;
+	QAngle					m_angMotion;
+	QAngle					m_angCounterMotion;
+	QAngle					m_angCompensation;
+
+	float m_flSideTiltResult;
+	float m_flSideTiltDifference;
+	float m_flForwardOffsetResult;
+	float m_flForwardOffsetDifference;
+
+
+
 
 #if defined( CLIENT_DLL )
 	int						m_nOldAnimationParity;

@@ -27,6 +27,7 @@ extern ConVar in_forceuser;
 #include "iclientmode.h"
 #endif
 
+
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -53,7 +54,34 @@ CBaseViewModel::CBaseViewModel()
 	m_nViewModelIndex	= 0;
 
 	m_nAnimationParity	= 0;
+	m_angEyeAngles = QAngle(0.0f, 0.0f, 0.0f);
+	m_angViewPunch = QAngle(0.0f, 0.0f, 0.0f);
+	m_angOldFacing = QAngle(0.0f, 0.0f, 0.0f);
+	m_angDelta = QAngle(0.0f, 0.0f, 0.0f);
+	m_angMotion = QAngle(0.0f, 0.0f, 0.0f);
+	m_angCounterMotion = QAngle(0.0f, 0.0f, 0.0f);
+	m_angCompensation = QAngle(0.0f, 0.0f, 0.0f);
+
+	m_flSideTiltResult = 1.0f;
+	m_flSideTiltDifference = 1.0f;
+	m_flForwardOffsetResult = 1.0f;
+	m_flForwardOffsetDifference = 1.0f;
+
+
 }
+
+
+
+ConVar cl_vm_sway("cl_vm_sway", "2.0");
+ConVar cl_vm_sway_rate("cl_vm_sway_rate", "1.0");
+ConVar cl_vm_sway_wiggle_rate("cl_vm_sway_wiggle_rate", "2.0");
+ConVar cl_vm_sway_tilt("cl_vm_sway_tilt", "280.0");
+ConVar cl_vm_sway_offset("cl_vm_sway_offset", "5.0");
+ConVar cl_vm_sway_jump_velocity_division("cl_vm_sway_jump_velocity_division", "24.0");
+
+
+
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -382,7 +410,7 @@ void CBaseViewModel::SendViewModelMatchingSequence( int sequence )
 #include "ivieweffects.h"
 #endif
 
-void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePosition, const QAngle& eyeAngles )
+void CBaseViewModel::CalcViewModelView(CBasePlayer *owner, const Vector& eyePosition, const QAngle& eyeAngles)
 {
 	// UNDONE: Calc this on the server?  Disabled for now as it seems unnecessary to have this info on the server
 #if defined( CLIENT_DLL )
@@ -392,40 +420,40 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 
 	CBaseCombatWeapon *pWeapon = m_hWeapon.Get();
 	//Allow weapon lagging
-	if ( pWeapon != NULL )
+	if (pWeapon != NULL)
 	{
 #if defined( CLIENT_DLL )
-		if ( !prediction->InPrediction() )
+		if (!prediction->InPrediction())
 #endif
 		{
 			// add weapon-specific bob 
-			pWeapon->AddViewmodelBob( this, vmorigin, vmangles );
+			pWeapon->AddViewmodelBob(this, vmorigin, vmangles);
 #if defined ( CSTRIKE_DLL )
 			CalcViewModelLag( vmorigin, vmangles, vmangoriginal );
 #endif
 		}
 	}
 	// Add model-specific bob even if no weapon associated (for head bob for off hand models)
-	AddViewModelBob( owner, vmorigin, vmangles );
+	AddViewModelBob(this, vmorigin, vmangles);
 
 #if defined( CLIENT_DLL )
-	if ( !prediction->InPrediction() )
+	if (!prediction->InPrediction())
 	{
 		// Add lag
-		CalcViewModelLag( vmorigin, vmangles, vmangoriginal );
+		CalcViewModelLag(vmorigin, vmangles, vmangoriginal);
 
 		// Let the viewmodel shake at about 10% of the amplitude of the player's view
-		vieweffects->ApplyShake( vmorigin, vmangles, 0.1 );	
+		vieweffects->ApplyShake(vmorigin, vmangles, 0.1);
 	}
 #endif
 
-	if( UseVR() )
+	if (UseVR())
 	{
-		g_ClientVirtualReality.OverrideViewModelTransform( vmorigin, vmangles, pWeapon && pWeapon->ShouldUseLargeViewModelVROverride() );
+		g_ClientVirtualReality.OverrideViewModelTransform(vmorigin, vmangles, pWeapon && pWeapon->ShouldUseLargeViewModelVROverride());
 	}
 
-	SetLocalOrigin( vmorigin );
-	SetLocalAngles( vmangles );
+	SetLocalOrigin(vmorigin);
+	SetLocalAngles(vmangles);
 
 #ifdef SIXENSE
 	if( g_pSixenseInput->IsEnabled() && (owner->GetObserverMode()==OBS_MODE_NONE) && !UseVR() )
@@ -457,65 +485,64 @@ void CBaseViewModel::CalcViewModelView( CBasePlayer *owner, const Vector& eyePos
 
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-float g_fMaxViewModelLag = 1.5f;
 
-void CBaseViewModel::CalcViewModelLag( Vector& origin, QAngle& angles, QAngle& original_angles )
+#define LAG_POSITION_COMPENSATION	0.2f
+#define LAG_FLIP_FACTOR				1.0f
+
+
+
+void CBaseViewModel::CalcViewModelLag(Vector& origin, QAngle& angles, QAngle& original_angles)
 {
-	Vector vOriginalOrigin = origin;
-	QAngle vOriginalAngles = angles;
+	CBasePlayer *pPlayer = C_BasePlayer::GetLocalPlayer();
+	if (!pPlayer)
+		return;
 
-	// Calculate our drift
-	Vector	forward;
-	AngleVectors( angles, &forward, NULL, NULL );
+	Vector dirForward, dirRight, dirUp;
+	AngleVectors(pPlayer->EyeAngles(), &dirForward, &dirRight, &dirUp);
 
-	if ( gpGlobals->frametime != 0.0f )
+	if (gpGlobals->frametime != 0.0f)
 	{
-		Vector vDifference;
-		VectorSubtract( forward, m_vecLastFacing, vDifference );
+		float flFrametime = clamp(gpGlobals->frametime, 0.001, 1.0f / 20.0f);
+		float flWiggleFactor = (1.0f - cl_vm_sway_wiggle_rate.GetFloat()) / 0.6f + 0.15f;
+		float flSwayRate = powf(cl_vm_sway_rate.GetFloat(), 1.5f) * 10.0f;
+		float clampFac = 1.1f - MIN((fabs(m_angMotion[PITCH]) + fabs(m_angMotion[YAW]) + fabs(m_angMotion[ROLL])) / 20.0f, 1.0f);
 
-		float flSpeed = 5.0f;
+		m_angViewPunch = pPlayer->m_Local.m_vecPunchAngle;
+		m_angEyeAngles = pPlayer->EyeAngles() - m_angViewPunch;
 
-		// If we start to lag too far behind, we'll increase the "catch up" speed.  Solves the problem with fast cl_yawspeed, m_yaw or joysticks
-		//  rotating quickly.  The old code would slam lastfacing with origin causing the viewmodel to pop to a new position
-		float flDiff = vDifference.Length();
-		if ( (flDiff > g_fMaxViewModelLag) && (g_fMaxViewModelLag > 0.0f) )
-		{
-			float flScale = flDiff / g_fMaxViewModelLag;
-			flSpeed *= flScale;
-		}
+		m_angDelta[PITCH] = UTIL_AngleDiff(m_angEyeAngles[PITCH], m_angOldFacing[PITCH]) / flFrametime / 120.0f * clampFac;
+		m_angDelta[YAW] = UTIL_AngleDiff(m_angEyeAngles[YAW], m_angOldFacing[YAW]) / flFrametime / 120.0f * clampFac;
+		m_angDelta[ROLL] = UTIL_AngleDiff(m_angEyeAngles[ROLL], m_angOldFacing[ROLL]) / flFrametime / 120.0f * clampFac;
 
-		// FIXME:  Needs to be predictable?
-		VectorMA( m_vecLastFacing, flSpeed * gpGlobals->frametime, vDifference, m_vecLastFacing );
-		// Make sure it doesn't grow out of control!!!
-		VectorNormalize( m_vecLastFacing );
-		VectorMA( origin, 5.0f, vDifference * -1.0f, origin );
+		Vector deltaForward;
+		AngleVectors(m_angDelta, &deltaForward, NULL, NULL);
+		VectorNormalize(deltaForward);
 
-		Assert( m_vecLastFacing.IsValid() );
+		m_angOldFacing = m_angEyeAngles;
+
+		m_angOldFacing[PITCH] -= (pPlayer->GetLocalVelocity().z / MAX(1, cl_vm_sway_jump_velocity_division.GetFloat()));
+
+		m_angCounterMotion = Lerp(flFrametime * (flSwayRate * (0.75f + (0.5f - flWiggleFactor))), m_angCounterMotion, -m_angMotion);
+		m_angCompensation[PITCH] = AngleDiff(m_angMotion[PITCH], -m_angCounterMotion[PITCH]);
+		m_angCompensation[YAW] = AngleDiff(m_angMotion[YAW], -m_angCounterMotion[YAW]);
+
+		m_angMotion = Lerp(flFrametime * flSwayRate, m_angMotion, m_angDelta + m_angCompensation);
 	}
 
-	Vector right, up;
-	AngleVectors( original_angles, &forward, &right, &up );
+	float flFraction = cl_vm_sway.GetFloat();
+	origin += (m_angMotion[YAW] * LAG_POSITION_COMPENSATION * 0.66f * dirRight * LAG_FLIP_FACTOR) * flFraction;
+	origin += (m_angMotion[PITCH] * LAG_POSITION_COMPENSATION * dirUp) * flFraction;
 
-	float pitch = original_angles[ PITCH ];
-	if ( pitch > 180.0f )
-		pitch -= 360.0f;
-	else if ( pitch < -180.0f )
-		pitch += 360.0f;
-
-	if ( g_fMaxViewModelLag == 0.0f )
-	{
-		origin = vOriginalOrigin;
-		angles = vOriginalAngles;
-	}
-
-	//FIXME: These are the old settings that caused too many exposed polys on some models
-	VectorMA( origin, -pitch * 0.035f,	forward,	origin );
-	VectorMA( origin, -pitch * 0.03f,		right,	origin );
-	VectorMA( origin, -pitch * 0.02f,		up,		origin);
+	angles[PITCH] += (m_angMotion[PITCH]) * flFraction;
+	angles[YAW] += (m_angMotion[YAW] * 0.66f * LAG_FLIP_FACTOR) * flFraction;
+	angles[ROLL] += (m_angCounterMotion[ROLL] * 0.5f * LAG_FLIP_FACTOR) * flFraction;
 }
+
+
+
+
+
+
 
 //-----------------------------------------------------------------------------
 // Stub to keep networking consistent for DEM files
@@ -617,6 +644,9 @@ BEGIN_PREDICTION_DATA( CBaseViewModel )
 	DEFINE_PRED_FIELD( m_flCycle, FIELD_FLOAT, FTYPEDESC_PRIVATE | FTYPEDESC_OVERRIDE | FTYPEDESC_NOERRORCHECK ),
 
 END_PREDICTION_DATA()
+
+
+
 
 void RecvProxy_SequenceNum( const CRecvProxyData *pData, void *pStruct, void *pOut )
 {

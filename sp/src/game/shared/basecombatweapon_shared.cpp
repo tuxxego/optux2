@@ -72,6 +72,8 @@ CBaseCombatWeapon::CBaseCombatWeapon()
 	m_fMaxRange2		= 1024;
 
 	m_bReloadsSingly	= false;
+	m_bMagazineStyleReloads = false;
+
 
 	// Defaults to zero
 	m_nViewModelIndex	= 0;
@@ -1923,6 +1925,63 @@ void CBaseCombatWeapon::ItemPreFrame( void )
 #endif
 }
 
+void CBaseCombatWeapon::ProcessAnimationEvents(void)
+{
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	if (!pOwner)
+		return;
+
+	if ( !m_bWeaponIsLowered && (pOwner->m_nButtons & IN_SPEED ) )
+	{
+		m_bWeaponIsLowered = true;
+		SendWeaponAnim( ACT_VM_SPRINT );
+		m_flNextPrimaryAttack = gpGlobals->curtime + GetViewModelSequenceDuration();
+		m_flNextSecondaryAttack = m_flNextPrimaryAttack;
+	}
+	else if ( m_bWeaponIsLowered && !(pOwner->m_nButtons & IN_SPEED ) )
+	{
+		m_bWeaponIsLowered = false;
+		SendWeaponAnim( ACT_VM_INSPECT );
+		m_flNextPrimaryAttack = gpGlobals->curtime + GetViewModelSequenceDuration();
+		m_flNextSecondaryAttack = m_flNextPrimaryAttack;
+	}
+
+	if (m_bWeaponIsLowered)
+	{
+		if (gpGlobals->curtime > m_flNextPrimaryAttack)
+		{
+			SendWeaponAnim( ACT_VM_SPRINT );
+			m_flNextPrimaryAttack = gpGlobals->curtime + GetViewModelSequenceDuration();
+			m_flNextSecondaryAttack = m_flNextPrimaryAttack;
+		}
+	}
+	
+//	if (!m_bWeaponIsyourmom && (pOwner->m_nButtons & IN_FORWARD))
+//	{
+//		m_bWeaponIsyourmom = true;
+//		SendWeaponAnim(ACT_VM_WALK);
+//		m_flNextPrimaryAttack = gpGlobals->curtime + GetViewModelSequenceDuration();
+//		m_flNextSecondaryAttack = m_flNextPrimaryAttack;
+//	}
+//	else if (m_bWeaponIsyourmom && !(pOwner->m_nButtons & IN_FORWARD))
+//	{
+//		m_bWeaponIsyourmom = false;
+//		SendWeaponAnim(ACT_VM_INSPECT);
+//		m_flNextPrimaryAttack = gpGlobals->curtime + GetViewModelSequenceDuration();
+//		m_flNextSecondaryAttack = m_flNextPrimaryAttack;
+//	}
+//
+//	if (m_bWeaponIsyourmom)
+//	{
+//		if (gpGlobals->curtime > m_flNextPrimaryAttack)
+//		{
+//			SendWeaponAnim(ACT_VM_WALK);
+//			m_flNextPrimaryAttack = gpGlobals->curtime + GetViewModelSequenceDuration();
+//			m_flNextSecondaryAttack = m_flNextPrimaryAttack;
+//		}
+//	}
+}
+
 //====================================================================================
 // WEAPON BEHAVIOUR
 //====================================================================================
@@ -1931,6 +1990,9 @@ void CBaseCombatWeapon::ItemPostFrame( void )
 	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
 	if (!pOwner)
 		return;
+
+	//Add this underneath the pOwner accessor check.
+	ProcessAnimationEvents();
 
 	UpdateAutoFire();
 
@@ -2449,11 +2511,19 @@ void CBaseCombatWeapon::FinishReload( void )
 	if (pOwner)
 	{
 		// If I use primary clips, reload primary
-		if ( UsesClipsForAmmo1() )
+		if (UsesClipsForAmmo1())
 		{
-			int primary	= MIN( GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount(m_iPrimaryAmmoType));	
-			m_iClip1 += primary;
-			pOwner->RemoveAmmo( primary, m_iPrimaryAmmoType);
+			int primary = min(GetMaxClip1() - m_iClip1, pOwner->GetAmmoCount(m_iPrimaryAmmoType));
+			if (pOwner->GetAmmoCount(m_iPrimaryAmmoType) >= GetMaxClip1())
+			{
+				m_iClip1 = m_bMagazineStyleReloads ? GetMaxClip1() : m_iClip1 + primary;
+				pOwner->RemoveAmmo(m_bMagazineStyleReloads ? GetMaxClip1() : primary, m_iPrimaryAmmoType);
+			}
+			else
+			{
+				m_iClip1 = pOwner->GetAmmoCount(m_iPrimaryAmmoType);
+				pOwner->RemoveAmmo(GetMaxClip1(), m_iPrimaryAmmoType);
+			}
 		}
 
 		// If I use secondary clips, reload secondary
@@ -2992,6 +3062,7 @@ BEGIN_DATADESC( CBaseCombatWeapon )
 	DEFINE_FIELD( m_iSecondaryAmmoType, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iClip1, FIELD_INTEGER ),
 	DEFINE_FIELD( m_iClip2, FIELD_INTEGER ),
+	DEFINE_FIELD( m_bMagazineStyleReloads, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bFiresUnderwater, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bAltFiresUnderwater, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_fMinRange1, FIELD_FLOAT ),

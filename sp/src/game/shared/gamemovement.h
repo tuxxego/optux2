@@ -205,6 +205,9 @@ protected:
 	virtual void CategorizePosition( void );
 
 	virtual void	CheckParameters( void );
+	
+	virtual void	DoDuckJump(float flFraction);
+	virtual void	DoUnDuckJump(float flFraction);
 
 	virtual	void	ReduceTimers( void );
 

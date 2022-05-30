@@ -164,6 +164,8 @@ extern CServerGameDLL g_ServerGameDLL;
 
 extern bool		g_fDrawLines;
 int				gEvilImpulse101;
+float     m_fRegenRemander;
+
 
 bool gInitHUD = true;
 
@@ -196,8 +198,11 @@ ConVar	sk_player_leg( "sk_player_leg","1" );
 ConVar  sv_player_net_suppress_usercommands( "sv_player_net_suppress_usercommands", "0", FCVAR_CHEAT, "For testing usercommand hacking sideeffects. DO NOT SHIP" );
 #endif // _DEBUG
 ConVar  sv_player_display_usercommand_errors( "sv_player_display_usercommand_errors", "0", FCVAR_CHEAT, "1 = Display warning when command values are out-of-range. 2 = Spew invalid ranges." );
-
+ConVar  sv_regeneration ("sv_regeneration", "1", FCVAR_REPLICATED );
+ConVar  sv_regeneration_wait_time ("sv_regeneration_wait_time", "3.0", FCVAR_REPLICATED );
+ConVar  sv_regeneration_rate ("sv_regeneration_rate", "20.5", FCVAR_REPLICATED );
 ConVar  player_debug_print_damage( "player_debug_print_damage", "0", FCVAR_CHEAT, "When true, print amount and type of all damage received by player to console." );
+ConVar  sk_player_weapons( "sk_player_weapons","0" );
 
 #ifdef MAPBASE
 ConVar	player_use_visibility_cache( "player_use_visibility_cache", "0", FCVAR_NONE, "Allows the player to use the visibility cache." );
@@ -339,6 +344,7 @@ BEGIN_DATADESC( CBasePlayer )
 	DEFINE_FIELD( m_iBonusChallenge, FIELD_INTEGER ),
 	DEFINE_FIELD( m_lastDamageAmount, FIELD_INTEGER ),
 	DEFINE_FIELD( m_tbdPrev, FIELD_TIME ),
+	DEFINE_FIELD( m_flLastDamageTime, FIELD_TIME ),
 	DEFINE_FIELD( m_flStepSoundTime, FIELD_FLOAT ),
 	DEFINE_ARRAY( m_szNetname, FIELD_CHARACTER, MAX_PLAYER_NAME_LENGTH ),
 
@@ -697,6 +703,8 @@ CBasePlayer::CBasePlayer( )
 	m_szNetname[0] = '\0';
 
 	m_iHealth = 0;
+	m_fRegenRemander = 0;
+
 	Weapon_SetLast( NULL );
 	m_bitsDamageType = 0;
 
@@ -1222,7 +1230,12 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 			return 0;
 	}
 
- 	if ( IsInCommentaryMode() )
+	if ( GetHealth() < 100 )
+	{
+    		m_flLastDamageTime = gpGlobals->curtime;
+	}
+ 	
+	if ( IsInCommentaryMode() )
 	{
 		if( !ShouldTakeDamageInCommentaryMode( info ) )
 			return 0;
@@ -4675,6 +4688,28 @@ void CBasePlayer::PostThink()
 {
 	m_vecSmoothedVelocity = m_vecSmoothedVelocity * SMOOTHING_FACTOR + GetAbsVelocity() * ( 1 - SMOOTHING_FACTOR );
 
+	// Regenerate heath
+	if ( IsAlive() && GetHealth() < GetMaxHealth() && (sv_regeneration.GetInt() == 1) )
+	{
+		// Color to overlay on the screen while the player is taking damage
+		color32 hurtScreenOverlay = {80,0,0,64};
+
+		if ( gpGlobals->curtime > m_flLastDamageTime + sv_regeneration_wait_time.GetFloat() )
+		{
+                			//Regenerate based on rate, and scale it by the frametime
+			m_fRegenRemander += sv_regeneration_rate.GetFloat() * gpGlobals->frametime;
+		
+			if(m_fRegenRemander >= 1)
+			{
+			TakeHealth( m_fRegenRemander, DMG_GENERIC );
+			m_fRegenRemander = 0;
+			}
+		}
+		else
+		{
+		UTIL_ScreenFade( this, hurtScreenOverlay, 1.0f, 0.1f, FFADE_IN|FFADE_PURGE );
+		}	
+	}
 	if ( !g_fGameOver && !m_iPlayerLocked )
 	{
 		if ( IsAlive() )
@@ -5142,6 +5177,17 @@ void CBasePlayer::Spawn( void )
 
 	m_AirFinished	= gpGlobals->curtime + AIRTIME;
 	m_nDrownDmgRate	= DROWNING_DAMAGE_INITIAL;
+	
+	if (sk_player_weapons.GetBool())
+{
+	// Give the player everything!
+	GiveAmmo( 255,	"Pistol");
+	//#ifdef HL2_EPISODIC
+	//GiveAmmo( 5,	"Hopwire" );
+	//#endif		
+	GiveNamedItem( "item_suit" );
+	GiveNamedItem( "weapon_pistol" );	
+}
 	
  // only preserve the shadow flag
 	int effects = GetEffects() & EF_NOSHADOW;
@@ -6444,6 +6490,17 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 		GiveNamedItem( "weapon_rpg" );
 		GiveNamedItem( "weapon_357" );
 		GiveNamedItem( "weapon_crossbow" );
+		GiveNamedItem( "weapon_akms" );
+		GiveNamedItem( "weapon_acr" );
+		GiveNamedItem( "weapon_mp7" );
+		GiveNamedItem( "weapon_tau" );
+		GiveNamedItem( "weapon_55i" );
+		GiveNamedItem( "weapon_mkk" );
+
+
+
+
+
 #ifdef HL2_EPISODIC
 		// GiveNamedItem( "weapon_magnade" );
 #endif
@@ -6785,6 +6842,7 @@ bool CBasePlayer::ClientCommand( const CCommand &args )
 		return true;
 	}
 
+
 	else if ( stricmp( cmd, "spec_goto" ) == 0 ) // chase next player
 	{
 		if ( ( GetObserverMode() == OBS_MODE_FIXED ||
@@ -6800,6 +6858,8 @@ bool CBasePlayer::ClientCommand( const CCommand &args )
 			angle.x = atof( args[4] );
 			angle.y = atof( args[5] );
 			angle.z = 0.0f;
+
+
 
 #ifdef MAPBASE
 			#define SPECGOTO_MAX_VALUE 0xFFFF/2.0f

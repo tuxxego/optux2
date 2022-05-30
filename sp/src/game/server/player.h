@@ -346,6 +346,7 @@ public:
 
 	virtual Vector			EyePosition( );			// position of eyes
 	const QAngle			&EyeAngles( );
+	const QAngle			&ViewModelAngles( );
 	void					EyePositionAndVectors( Vector *pPosition, Vector *pForward, Vector *pRight, Vector *pUp );
 	virtual const QAngle	&LocalEyeAngles();		// Direction of eyes
 	void					EyeVectors( Vector *pForward, Vector *pRight = NULL, Vector *pUp = NULL );
@@ -924,6 +925,7 @@ public:
 
 	int						m_nUpdateRate;		// user snapshot rate cl_updaterate
 	float					m_fLerpTime;		// users cl_interp
+	float					m_flLastDamageTime;
 	bool					m_bLagCompensation;	// user wants lag compenstation
 	bool					m_bPredictWeapons; //  user has client side predicted weapons
 	
@@ -956,7 +958,7 @@ protected:
 	void					CalcVehicleView( IServerVehicle *pVehicle, Vector& eyeOrigin, QAngle& eyeAngles, 	
 								float& zNear, float& zFar, float& fov );
 	void					CalcObserverView( Vector& eyeOrigin, QAngle& eyeAngles, float& fov );
-	void					CalcViewModelView( const Vector& eyeOrigin, const QAngle& eyeAngles);
+	void					CalcViewModelView(const Vector& eyeOrigin, const QAngle& eyeAngles);
 
 	virtual	void			Internal_HandleMapEvent( inputdata_t &inputdata ){}
 

@@ -300,7 +300,7 @@ void CZombie::Spawn( void )
 		m_fIsTorso = true;
 	}
 
-	m_fIsHeadless = false;
+	m_fIsHeadless = true;
 #endif
 
 #ifdef HL2_EPISODIC

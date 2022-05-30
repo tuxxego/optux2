@@ -675,9 +675,9 @@ void CFastZombie::Spawn( void )
 	}
 
 #ifdef HL2_EPISODIC
-	SetBloodColor( BLOOD_COLOR_ZOMBIE );
+	SetBloodColor( BLOOD_COLOR_RED );
 #else
-	SetBloodColor( BLOOD_COLOR_YELLOW );
+	SetBloodColor( BLOOD_COLOR_RED );
 #endif // HL2_EPISODIC
 
 #ifdef MAPBASE

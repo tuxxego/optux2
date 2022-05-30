@@ -779,8 +779,11 @@ bool CNPC_BaseZombie::ShouldBecomeTorso( const CTakeDamageInfo &info, float flDa
 // Purpose: A zombie has taken damage. Determine whether he release his headcrab.
 // Output : YES, IMMEDIATE, or SCHEDULED (see HeadcrabRelease_t)
 //-----------------------------------------------------------------------------
-HeadcrabRelease_t CNPC_BaseZombie::ShouldReleaseHeadcrab( const CTakeDamageInfo &info, float flDamageThreshold )
+HeadcrabRelease_t CNPC_BaseZombie::ShouldReleaseHeadcrab(const CTakeDamageInfo &info, float flDamageThreshold)
 {
+	return (m_iHealth <= 0 && m_fIsTorso && IsChopped(info)) ? RELEASE_RAGDOLL_SLICED_OFF : RELEASE_NO;
+
+
 #ifdef MAPBASE
 	if ( m_iHealth <= 0 && !m_fIsHeadless )
 #else
@@ -1222,7 +1225,7 @@ void CNPC_BaseZombie::DieChopped( const CTakeDamageInfo &info )
 
 	}
 
-	if ( UTIL_ShouldShowBlood( BLOOD_COLOR_YELLOW ) )
+	if ( UTIL_ShouldShowBlood( BLOOD_COLOR_RED ) )
 	{
 		int i;
 		Vector vecSpot;
@@ -1236,7 +1239,7 @@ void CNPC_BaseZombie::DieChopped( const CTakeDamageInfo &info )
 			vecSpot.y += random->RandomFloat( -12, 12 ); 
 			vecSpot.z += random->RandomFloat( -4, 16 ); 
 
-			UTIL_BloodDrips( vecSpot, vec3_origin, BLOOD_COLOR_YELLOW, 50 );
+			UTIL_BloodDrips( vecSpot, vec3_origin, BLOOD_COLOR_RED, 50 );
 		}
 
 		for ( int i = 0 ; i < 4 ; i++ )
@@ -2378,17 +2381,30 @@ void CNPC_BaseZombie::BecomeTorso( const Vector &vecTorsoForce, const Vector &ve
 //---------------------------------------------------------
 void CNPC_BaseZombie::Event_Killed( const CTakeDamageInfo &info )
 {
-	if ( info.GetDamageType() & DMG_VEHICLE )
-	{
-		Vector vecDamageDir = info.GetDamageForce();
-		VectorNormalize( vecDamageDir );
+		if (info.GetDamageType() & (DMG_BUCKSHOT | DMG_BLAST))
+		{
+			SetModel("models/zombie/classic_legs.mdl");
 
-		// Big blood splat
-		UTIL_BloodSpray( WorldSpaceCenter(), vecDamageDir, BLOOD_COLOR_YELLOW, 8, FX_BLOODSPRAY_CLOUD );
-	}
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/pgib_p1.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/pgib_p2.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/pgib_p3.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/pgib_p4.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/pgib_p5.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/hgibs_jaw.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/hgibs_scapula.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/hgibs_scapula.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/rgib_p1.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/rgib_p2.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/rgib_p3.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/rgib_p4.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/rgib_p5.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/rgib_p6.mdl", 5);
+			CGib::SpawnSpecificGibs(this, 1, 750, 1500, "models/gibs/gibhead.mdl", 5);
+		}
 
-   	BaseClass::Event_Killed( info );
+		BaseClass::Event_Killed(info);
 }
+
 
 //---------------------------------------------------------
 //---------------------------------------------------------
@@ -2540,9 +2556,9 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 			CopyRenderColorTo( pGib );
 
 			
-			if( UTIL_ShouldShowBlood(BLOOD_COLOR_YELLOW) )
+			if( UTIL_ShouldShowBlood(BLOOD_COLOR_RED) )
 			{
-				UTIL_BloodImpact( pGib->WorldSpaceCenter(), Vector(0,0,1), BLOOD_COLOR_YELLOW, 1 );
+				UTIL_BloodImpact( pGib->WorldSpaceCenter(), Vector(0,0,1), BLOOD_COLOR_RED, 1 );
 
 				for ( int i = 0 ; i < 3 ; i++ )
 				{
@@ -2552,7 +2568,7 @@ void CNPC_BaseZombie::ReleaseHeadcrab( const Vector &vecOrigin, const Vector &ve
 					vecSpot.y += random->RandomFloat( -8, 8 ); 
 					vecSpot.z += random->RandomFloat( -8, 8 ); 
 
-					UTIL_BloodDrips( vecSpot, vec3_origin, BLOOD_COLOR_YELLOW, 50 );
+					UTIL_BloodDrips( vecSpot, vec3_origin, BLOOD_COLOR_RED, 50 );
 				}
 			}
 		}

@@ -69,6 +69,7 @@ $Project "Server (OperationTuxxego2)"
 		$File	"hl2\npc_bullsquid.h"
 		$File	"hl2\npc_houndeye.h"
 		$File	"hl2\npc_houndeye.cpp"
+		$File	"operationtuxxego2\weapon_ar15.cpp"
 		}
 
 

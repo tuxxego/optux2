@@ -53,6 +53,7 @@ STUB_WEAPON_CLASS(weapon_infectionhands, WeaponInfectionHands, C_BaseHLBludgeonW
 STUB_WEAPON_CLASS(weapon_tau, WeaponTau, C_BaseHLCombatWeapon);
 STUB_WEAPON_CLASS(weapon_55i, Weapon55I, C_HLSelectFireMachineGun);
 STUB_WEAPON_CLASS(weapon_mkk, WeaponMkk, C_BaseHLCombatWeapon);
+STUB_WEAPON_CLASS(weapon_ar15, WeaponAR15, C_BaseHLCombatWeapon);
 
 
 

@@ -4,8 +4,8 @@
 //	Project Script
 //-----------------------------------------------------------------------------
 
-$Macro GAMENAME 	"hl2"
-$Macro OUTBINNAME	"gameui2"
+$Macro GAMENAME 	"optux2"
+$Macro OUTBINNAME	"TuxUI"
 $Macro OUTBINDIR	"$SRCDIR\..\game\$GAMENAME\bin"
 $Macro SRCDIR		"..\.."
 

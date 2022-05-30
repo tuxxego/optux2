@@ -12,6 +12,9 @@ $Group "gamedlls"
 {
 	"client"
 	"server"
+	"gameui2"
+	"rendersystem"
+
 }
 
 $Group "game"
@@ -23,6 +26,9 @@ $Group "game"
 	"tier1"
 	"vgui_controls"
 	"vscript"
+	"gameui2"
+	"rendersystem"
+
 }
 
 $Group "shaders"

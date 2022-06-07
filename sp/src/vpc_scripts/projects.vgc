@@ -18,6 +18,7 @@ $Project "client"
 	"game\client\client_hl2.vpc"		[($WIN32||$X360||$POSIX) && $HL2]
 	"game\client\client_episodic.vpc"	[($WIN32||$X360||$POSIX) && $EPISODIC]
 	"game\client\client_optux2.vpc"	[($WIN32||$X360||$POSIX) && $OPTUX2]
+	"game\client\client_glitchy.vpc"	[($WIN32||$X360||$POSIX) && $GLITCHY]
 }
 
 $Project "fgdlib"
@@ -46,6 +47,7 @@ $Project "server"
 	"game\server\server_hl2.vpc"		[($WIN32||$X360||$POSIX) && $HL2]
 	"game\server\server_episodic.vpc"	[($WIN32||$X360||$POSIX) && $EPISODIC]
 	"game\server\server_optux2.vpc"	[($WIN32||$X360||$POSIX) && $OPTUX2]
+	"game\server\server_glitchy.vpc"		[($WIN32||$X360||$POSIX) && $GLITCHY]
 }
 
 $Project "mathlib"

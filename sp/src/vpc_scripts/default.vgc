@@ -13,6 +13,7 @@ $Games
 	"EPISODIC"
 	"HL2"
 	"OPTUX2"
+	"GLITCHY"
 }
 
 // Makes the VPC scripts work in the SDK's context

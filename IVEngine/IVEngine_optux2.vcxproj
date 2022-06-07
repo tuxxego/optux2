@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>IVEngine Client</ProjectName>
+    <ProjectGuid>{2F7F0AD5-40F8-F330-8C21-EBCEF296214D}</ProjectGuid>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\hl2;.\hl2\elements;..\game\shared\hl2;..\game\shared\episodic;..\..\public;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>;HL2_CLIENT_DLL;HL2_EPISODIC;OPTUX2;_EXTERNAL_DLL_EXT=.dll;VPCGAMECAPS=OPTUX2;PROJECTDIR=D:\Users\Tuxx3\Downloads\optux2src\sp\src\IVEngine;_DLL_EXT=.dll;VPCGAME=optux2;SOURCE1=1</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+    </ResourceCompile>
+    <PreLinkEvent>
+    </PreLinkEvent>
+    <Link>
+    </Link>
+    <Lib>
+    </Lib>
+    <Manifest>
+    </Manifest>
+    <Xdcmake>
+    </Xdcmake>
+    <Bscmake>
+    </Bscmake>
+    <PostBuildEvent>
+    </PostBuildEvent>
+    <CustomBuildStep>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\hl2;.\hl2\elements;..\game\shared\hl2;..\game\shared\episodic;..\..\public;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>;HL2_CLIENT_DLL;HL2_EPISODIC;OPTUX2;_EXTERNAL_DLL_EXT=.dll;VPCGAMECAPS=OPTUX2;PROJECTDIR=D:\Users\Tuxx3\Downloads\optux2src\sp\src\IVEngine;_DLL_EXT=.dll;VPCGAME=optux2;SOURCE1=1</PreprocessorDefinitions>
+    </ClCompile>
+    <ResourceCompile>
+    </ResourceCompile>
+    <PreLinkEvent>
+    </PreLinkEvent>
+    <Link>
+    </Link>
+    <Lib>
+    </Lib>
+    <Manifest>
+    </Manifest>
+    <Xdcmake>
+    </Xdcmake>
+    <Bscmake>
+    </Bscmake>
+    <PostBuildEvent>
+    </PostBuildEvent>
+    <CustomBuildStep>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="optux2_client\client.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="ivengine.vpc">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Running VPC CRC Check - ivengine.vpc</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">if exist &quot;..\devtools\bin\vpc.exe&quot; &quot;..\devtools\bin\vpc.exe&quot; -crc2 &quot;IVEngine_optux2.vcxproj&quot;&#x0D;&#x0A;if ERRORLEVEL 1 exit /b 1&#x0D;&#x0A;echo crc_complete &gt; D:\Users\Tuxx3\Downloads\optux2src\sp\src\IVEngine\ivengine.vpc.sentinel</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">D:\Users\Tuxx3\Downloads\optux2src\sp\src\IVEngine\ivengine.vpc.sentinel</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Running VPC CRC Check - ivengine.vpc</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">if exist &quot;..\devtools\bin\vpc.exe&quot; &quot;..\devtools\bin\vpc.exe&quot; -crc2 &quot;IVEngine_optux2.vcxproj&quot;&#x0D;&#x0A;if ERRORLEVEL 1 exit /b 1&#x0D;&#x0A;echo crc_complete &gt; D:\Users\Tuxx3\Downloads\optux2src\sp\src\IVEngine\ivengine.vpc.sentinel</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">D:\Users\Tuxx3\Downloads\optux2src\sp\src\IVEngine\ivengine.vpc.sentinel</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
